@@ -23,3 +23,21 @@
 ## アーキテクト
 
 - typescript, React, Next.js
+
+## ローカル実行手順
+
+1. 依存ライブラリをインストールします。
+   ```bash
+   npm install
+   ```
+2. 開発サーバーを起動します。
+   ```bash
+   npm run dev
+   ```
+   既定では http://localhost:3000 で起動します。ポート 3000 が利用できない場合は `PORT=任意のポート npm run dev` のように起動ポートを変更してください。
+3. プロダクションビルドを確認したい場合は次のコマンドを実行します。
+   ```bash
+   npm run build
+   npm run start
+   ```
+   `npm run start` はビルド済みアプリを同じポートで起動します。

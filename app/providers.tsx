@@ -1,6 +1,11 @@
 'use client';
 
-import { ChakraProvider, extendTheme, type ThemeConfig } from "@chakra-ui/react";
+import {
+  ChakraProvider,
+  extendTheme,
+  type ThemeConfig,
+  type StyleFunctionProps,
+} from "@chakra-ui/react";
 
 const config: ThemeConfig = {
   initialColorMode: "light",
@@ -16,19 +21,19 @@ const theme = extendTheme({
       "\"Segoe UI\", -apple-system, BlinkMacSystemFont, \"Hiragino Sans\", \"Hiragino Kaku Gothic ProN\", Meiryo, sans-serif",
   },
   styles: {
-    global: {
+    global: (props: StyleFunctionProps) => ({
       "html, body": {
         height: "100%",
       },
       body: {
         margin: 0,
-        backgroundColor: "gray.100",
-        color: "gray.800",
+        backgroundColor: props.colorMode === "dark" ? "gray.900" : "gray.100",
+        color: props.colorMode === "dark" ? "gray.100" : "gray.800",
       },
       "#__next": {
         height: "100%",
       },
-    },
+    }),
   },
   components: {
     Button: {
