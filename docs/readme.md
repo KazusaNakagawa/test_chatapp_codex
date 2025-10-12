@@ -9,6 +9,17 @@
 | サーバーサイドレンダリング（SSR）／ハイブリッドレンダリング | Next.js 等 | 初期表示高速化、SEO 最適化、キャッシュ活用 | React／Next.js ベース構成と整合性あり ([medium.com](https://medium.com/%40david.richards.tech/building-the-iconic-chatgpt-frontend-e65ec049fa54)) |
 
 
+| 分類 | フレームワーク／ライブラリ名 | 特徴・用途 | 備考・利用例 |
+|------|----------------------------|-------------|----------------|
+| 🌈 ユーティリティ系CSS | **Tailwind CSS** | クラス名ベースで高速にレイアウト・色・余白を指定。Reactと相性が良い | ChatGPT風UIで最も採用されやすい。`className`に直接記述できる。 |
+| 💎 UIコンポーネント | **Chakra UI** | Tailwindよりも高レベル。ボタンや入力欄などがテーマ統一済み。 | OpenAI系の開発者がPoC段階でよく利用。TypeScript対応◎ |
+| 💅 CSS-in-JS 系 | **styled-components** | 各Reactコンポーネント内にスタイルを埋め込み可能。スコープが自動分離。 | デザインシステム構築に強い。Next.jsとも相性良い。 |
+| 💄 CSS-in-JS 系 | **Emotion** | パフォーマンス重視の軽量CSS-in-JS。styled APIとcss prop両対応。 | MUI (Material UI) の内部実装にも採用。 |
+| 🧱 UIフレームワーク | **Material UI (MUI)** | GoogleのMaterial Design実装。豊富なコンポーネント。 | エンタープライズ用途に強い。React公式互換。 |
+| 🪶 軽量UI | **Radix UI** | アクセシビリティ対応済みの低レベルUIコンポーネント群。 | TailwindやChakraと組み合わせて利用されることが多い。 |
+| 🧩 コンポーネント構築支援 | **Framer Motion** | アニメーション・トランジション演出用ライブラリ。 | ChatGPT UIのスムーズなメッセージアニメーションなどに有効。 |
+| 🪄 デザインシステム構築 | **Stitches** | 高速CSS-in-JS。小規模アプリに向く。 | Vercel（Next.js運営元）が開発。SSR互換。 |
+
 ## アーキテクト
 
 - typescript, React, Next.js

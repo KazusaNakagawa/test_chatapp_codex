@@ -1,10 +1,29 @@
-'use client';
+"use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { STACK_ROWS, SUGGESTIONS, THEME_KEY } from "@/lib/chat/constants";
+import {
+  Avatar,
+  Badge,
+  Box,
+  Button,
+  Collapse,
+  Flex,
+  Heading,
+  HStack,
+  IconButton,
+  Text,
+  Textarea,
+  VStack,
+  Wrap,
+  WrapItem,
+  chakra,
+  useColorMode,
+  useColorModeValue,
+  useDisclosure,
+} from "@chakra-ui/react";
+import { keyframes } from "@emotion/react";
+import { STACK_ROWS, SUGGESTIONS } from "@/lib/chat/constants";
 import { useChat } from "@/lib/chat/useChat";
-
-type Theme = "light" | "dark";
 
 const autoResize = (element: HTMLTextAreaElement | null) => {
   if (!element) return;
@@ -16,6 +35,30 @@ const autoResize = (element: HTMLTextAreaElement | null) => {
 
 const formatTime = (timestamp: number) =>
   new Date(timestamp).toLocaleTimeString("ja-JP", { hour: "2-digit", minute: "2-digit" });
+
+const TypingIndicator = () => {
+  const bounce = keyframes`
+    0%, 100% { opacity: 0.3; transform: translateY(0); }
+    50% { opacity: 1; transform: translateY(-2px); }
+  `;
+
+  return (
+    <HStack spacing={1}>
+      {[0, 1, 2].map((index) => (
+        <Box
+          key={index}
+          w="2"
+          h="2"
+          borderRadius="full"
+          bg="teal.400"
+          animation={`${bounce} 1.2s ease-in-out ${index * 0.2}s infinite`}
+        />
+      ))}
+    </HStack>
+  );
+};
+
+const Form = chakra("form");
 
 export default function ChatApp() {
   const {
@@ -30,30 +73,10 @@ export default function ChatApp() {
   } = useChat();
 
   const [inputValue, setInputValue] = useState("");
-  const [theme, setTheme] = useState<Theme>("light");
-  const [showStack, setShowStack] = useState(false);
+  const { colorMode, toggleColorMode } = useColorMode();
+  const stackDisclosure = useDisclosure();
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const endOfMessagesRef = useRef<HTMLDivElement | null>(null);
-
-  useEffect(() => {
-    if (typeof window === "undefined") {
-      return;
-    }
-    const saved = window.localStorage.getItem(THEME_KEY);
-    if (saved === "dark") {
-      setTheme("dark");
-    }
-  }, []);
-
-  useEffect(() => {
-    if (typeof document === "undefined") {
-      return;
-    }
-    document.documentElement.classList.toggle("dark", theme === "dark");
-    if (typeof window !== "undefined") {
-      window.localStorage.setItem(THEME_KEY, theme);
-    }
-  }, [theme]);
 
   useEffect(() => {
     autoResize(textareaRef.current);
@@ -62,10 +85,6 @@ export default function ChatApp() {
   useEffect(() => {
     endOfMessagesRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [activeConversation?.messages.length, isTyping]);
-
-  const toggleTheme = () => {
-    setTheme((current) => (current === "light" ? "dark" : "light"));
-  };
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -95,159 +114,304 @@ export default function ChatApp() {
 
   const messageList = useMemo(() => activeConversation?.messages ?? [], [activeConversation]);
 
+  const layoutBg = useColorModeValue("gray.100", "gray.900");
+  const sidebarBg = useColorModeValue("white", "gray.800");
+  const mainHeaderBg = useColorModeValue("white", "gray.800");
+  const mainBodyBg = useColorModeValue("gray.50", "gray.900");
+  const panelBg = useColorModeValue("white", "gray.800");
+  const surfaceBg = useColorModeValue("white", "gray.800");
+  const borderColor = useColorModeValue("gray.200", "gray.700");
+  const secondaryText = useColorModeValue("gray.500", "gray.400");
+  const suggestionBg = useColorModeValue("white", "gray.800");
+  const textareaBg = useColorModeValue("white", "gray.800");
+
   return (
-    <div className="chat-shell">
-      <aside className="sidebar">
-        <header className="sidebar__header">
-          <h1>Architect GPT</h1>
-        </header>
-        <section className="sidebar__content">
-          <button className="new-chat-button" type="button" onClick={startNewChat}>
-            ＋ 新しいチャット
-          </button>
-          <div className="recent-chats" role="list">
-            {conversations.map((conversation) => (
-              <button
+    <Flex h="100%" minH="100vh" bg={layoutBg}>
+      <Flex
+        as="aside"
+        direction="column"
+        w="72"
+        px="6"
+        py="6"
+        gap="6"
+        borderRightWidth="1px"
+        borderColor={borderColor}
+        bg={sidebarBg}
+      >
+        <Heading size="md">Architect GPT</Heading>
+        <Button
+          leftIcon={
+            <chakra.span role="img" aria-hidden fontSize="lg" lineHeight="1">
+              ＋
+            </chakra.span>
+          }
+          variant="outline"
+          size="sm"
+          onClick={() => {
+            startNewChat();
+            stackDisclosure.onClose();
+          }}
+        >
+          新しいチャット
+        </Button>
+        <VStack
+          spacing="2"
+          align="stretch"
+          flex="1"
+          overflowY="auto"
+          pr="1"
+          role="list"
+        >
+          {conversations.map((conversation) => {
+            const isActive = conversation.id === activeId;
+            return (
+              <Button
                 key={conversation.id}
-                type="button"
                 role="listitem"
-                className={`recent-chat-item${
-                  conversation.id === activeId ? " is-active" : ""
-                }`}
+                justifyContent="flex-start"
+                variant={isActive ? "solid" : "ghost"}
+                colorScheme={isActive ? "teal" : undefined}
+                size="sm"
                 onClick={() => {
                   selectConversation(conversation.id);
-                  setShowStack(false);
+                  stackDisclosure.onClose();
                 }}
               >
                 {conversation.title}
-              </button>
-            ))}
-          </div>
-        </section>
-      </aside>
-      <main className="main-area">
-        <header className="main-area__header">
-          <div>
-            <h2>ChatGPT風 UI</h2>
-            <p className="subtitle">TypeScript + React + Next.js アーキテクト構成</p>
-          </div>
-          <div className="header-actions">
-            <button
-              className="stack-toggle"
-              type="button"
-              aria-expanded={showStack}
-              onClick={() => setShowStack((value) => !value)}
+              </Button>
+            );
+          })}
+        </VStack>
+      </Flex>
+
+      <Flex flex="1" direction="column" bg={mainBodyBg}>
+        <Flex
+          as="header"
+          px="8"
+          py="6"
+          align="center"
+          justify="space-between"
+          borderBottomWidth="1px"
+          borderColor={borderColor}
+          bg={mainHeaderBg}
+        >
+          <Box>
+            <Heading size="lg">ChatGPT風 UI</Heading>
+            <Text fontSize="sm" color={secondaryText}>
+              TypeScript + React + Next.js アーキテクト構成
+            </Text>
+          </Box>
+          <HStack spacing="3">
+            <Button
+              variant="ghost"
+              size="sm"
+              leftIcon={
+                <chakra.span role="img" aria-hidden fontSize="lg" lineHeight="1">
+                  🧱
+                </chakra.span>
+              }
+              onClick={stackDisclosure.onToggle}
+              aria-expanded={stackDisclosure.isOpen}
             >
-              🧱 スタック情報
-            </button>
-            <button
-              className="theme-toggle"
-              type="button"
-              aria-pressed={theme === "dark"}
-              onClick={toggleTheme}
-            >
-              {theme === "dark" ? "☀️" : "🌙"}
-            </button>
-          </div>
-        </header>
-        <section className="stack-panel" hidden={!showStack} aria-hidden={!showStack}>
-          <header className="stack-panel__header">
-            <h3>アーキテクトレイヤー</h3>
-            <p>docs/readme.md に記載された構成案を元にスタック情報を整理しています。</p>
-          </header>
-          <div className="stack-panel__list">
-            {STACK_ROWS.map((row) => (
-              <article key={row.layer} className="stack-card">
-                <div className="stack-card__layer">
-                  <strong>{row.layer}</strong>
-                  <span>{row.technologies}</span>
-                </div>
-                <p className="stack-card__detail">{row.benefit}</p>
-                <p className="stack-card__note">
-                  {row.note}
-                  {row.source ? (
-                    <>
-                      {" "}
-                      <a href={row.source.url} target="_blank" rel="noreferrer noopener">
-                        {row.source.label}
-                      </a>
-                    </>
-                  ) : null}
-                </p>
-              </article>
-            ))}
-          </div>
-        </section>
-        <section className="message-list" aria-live="polite">
+              スタック情報
+            </Button>
+            <IconButton
+              aria-label="テーマを切り替える"
+              icon={
+                <chakra.span role="img" aria-hidden fontSize="lg" lineHeight="1">
+                  {colorMode === "dark" ? "☀️" : "🌙"}
+                </chakra.span>
+              }
+              onClick={toggleColorMode}
+              variant="ghost"
+            />
+          </HStack>
+        </Flex>
+
+        <Collapse in={stackDisclosure.isOpen} animateOpacity>
+          <Box px="8" py="6" borderBottomWidth="1px" borderColor={borderColor} bg={panelBg}>
+            <Heading size="md" mb="2">
+              アーキテクトレイヤー
+            </Heading>
+            <Text fontSize="sm" color={secondaryText} mb="6">
+              docs/readme.md に記載された構成案を元にスタック情報を整理しています。
+            </Text>
+            <Flex direction="column" gap="4">
+              {STACK_ROWS.map((row) => (
+                <Box
+                  key={row.layer}
+                  borderWidth="1px"
+                  borderColor={borderColor}
+                  borderRadius="xl"
+                  p="4"
+                  bg={surfaceBg}
+                >
+                  <Flex justify="space-between" align="center" mb="2" gap="4">
+                    <Box>
+                      <Text fontWeight="semibold">{row.layer}</Text>
+                      <Text fontSize="sm" color={secondaryText}>
+                        {row.technologies}
+                      </Text>
+                    </Box>
+                  </Flex>
+                  <Text fontSize="sm" mb="2">
+                    {row.benefit}
+                  </Text>
+                  <Text fontSize="sm" color={secondaryText}>
+                    {row.note}
+                    {row.source ? (
+                      <>
+                        {" "}
+                        <Button
+                          as="a"
+                          href={row.source.url}
+                          target="_blank"
+                          rel="noreferrer noopener"
+                          variant="link"
+                          colorScheme="teal"
+                          size="sm"
+                        >
+                          {row.source.label}
+                        </Button>
+                      </>
+                    ) : null}
+                  </Text>
+                </Box>
+              ))}
+            </Flex>
+          </Box>
+        </Collapse>
+
+        <Box
+          flex="1"
+          overflowY="auto"
+          px="8"
+          py="6"
+          display="flex"
+          flexDirection="column"
+          gap="4"
+          aria-live="polite"
+        >
           {hydrated ? (
             <>
-              {messageList.map((message) => (
-                <article key={message.id} className={`message message--${message.role}`}>
-                  <div className="message__meta">
-                    <span className={`avatar avatar--${message.role}`}>
-                      {message.role === "assistant" ? "AI" : "You"}
-                    </span>
-                    <span>{message.role === "assistant" ? "Architect GPT" : "あなた"}</span>
-                    <span className="badge">{formatTime(message.createdAt)}</span>
-                  </div>
-                  <p className="message__content">{message.content}</p>
-                </article>
-              ))}
+              {messageList.map((message) => {
+                const isAssistant = message.role === "assistant";
+                return (
+                  <Box
+                    key={message.id}
+                    alignSelf={isAssistant ? "flex-start" : "flex-end"}
+                    maxW="3xl"
+                    w="full"
+                    borderRadius="xl"
+                    borderWidth="1px"
+                    borderColor={borderColor}
+                    bg={isAssistant ? surfaceBg : "teal.500"}
+                    color={isAssistant ? undefined : "white"}
+                    p="4"
+                    shadow="sm"
+                  >
+                    <HStack spacing="3" mb="2">
+                      <Avatar
+                        size="sm"
+                        name={isAssistant ? "Architect GPT" : "You"}
+                        bg={isAssistant ? "teal.500" : "gray.500"}
+                        color="white"
+                      />
+                      <Text fontWeight="semibold">
+                        {isAssistant ? "Architect GPT" : "あなた"}
+                      </Text>
+                      <Badge variant={isAssistant ? "subtle" : "solid"} ml="auto">
+                        {formatTime(message.createdAt)}
+                      </Badge>
+                    </HStack>
+                    <Text whiteSpace="pre-wrap">{message.content}</Text>
+                  </Box>
+                );
+              })}
               {isTyping ? (
-                <article className="message message--assistant">
-                  <div className="message__meta">
-                    <span className="avatar avatar--assistant">AI</span>
-                    <span>Architect GPT</span>
-                    <span className="badge">入力中…</span>
-                  </div>
-                  <div className="message__content typing" aria-label="AIが入力中">
-                    <span />
-                    <span />
-                    <span />
-                  </div>
-                </article>
+                <Box
+                  alignSelf="flex-start"
+                  maxW="xs"
+                  borderRadius="xl"
+                  borderWidth="1px"
+                  borderColor={borderColor}
+                  bg={surfaceBg}
+                  p="4"
+                >
+                  <HStack spacing="3">
+                    <Avatar size="sm" name="Architect GPT" bg="teal.500" color="white" />
+                    <Text fontWeight="semibold">Architect GPT</Text>
+                    <Badge variant="subtle" colorScheme="gray">
+                      入力中…
+                    </Badge>
+                  </HStack>
+                  <Box mt="3" aria-label="AIが入力中">
+                    <TypingIndicator />
+                  </Box>
+                </Box>
               ) : null}
             </>
           ) : (
-            <article className="message message--assistant">
-              <div className="message__meta">
-                <span className="avatar avatar--assistant">AI</span>
-                <span>Architect GPT</span>
-              </div>
-              <p className="message__content">チャット履歴を読み込み中です…</p>
-            </article>
-          )}
-          <div ref={endOfMessagesRef} />
-        </section>
-        <section className="suggestions">
-          {SUGGESTIONS.map((suggestion) => (
-            <button
-              key={suggestion}
-              type="button"
-              onClick={() => handleSuggestion(suggestion)}
+            <Box
+              alignSelf="flex-start"
+              borderRadius="xl"
+              borderWidth="1px"
+              borderColor={borderColor}
+              bg={surfaceBg}
+              p="4"
             >
-              {suggestion}
-            </button>
-          ))}
-        </section>
-        <form className="composer" onSubmit={handleSubmit} onKeyDown={handleKeyDown}>
-          <label className="composer__input" htmlFor="chat-input">
-            <textarea
-              id="chat-input"
-              ref={textareaRef}
-              rows={1}
-              placeholder="メッセージを入力して Enter で送信（Shift + Enter で改行）"
-              value={inputValue}
-              onChange={(event) => setInputValue(event.target.value)}
-              onInput={(event) => autoResize(event.currentTarget)}
-              required
-            />
-          </label>
-          <button className="composer__submit" type="submit" disabled={!inputValue.trim()}>
+              <HStack spacing="3" mb="2">
+                <Avatar size="sm" name="Architect GPT" bg="teal.500" color="white" />
+                <Text fontWeight="semibold">Architect GPT</Text>
+              </HStack>
+              <Text>チャット履歴を読み込み中です…</Text>
+            </Box>
+          )}
+          <Box ref={endOfMessagesRef} />
+        </Box>
+
+        <Box px="8" py="4">
+          <Wrap spacing="3">
+            {SUGGESTIONS.map((suggestion) => (
+              <WrapItem key={suggestion}>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  bg={suggestionBg}
+                  onClick={() => handleSuggestion(suggestion)}
+                >
+                  {suggestion}
+                </Button>
+              </WrapItem>
+            ))}
+          </Wrap>
+        </Box>
+
+        <Form
+          display="flex"
+          gap="4"
+          px="8"
+          py="6"
+          onSubmit={handleSubmit}
+          onKeyDown={handleKeyDown}
+        >
+          <Textarea
+            id="chat-input"
+            ref={textareaRef}
+            rows={1}
+            resize="none"
+            placeholder="メッセージを入力して Enter で送信（Shift + Enter で改行）"
+            value={inputValue}
+            onChange={(event) => setInputValue(event.target.value)}
+            onInput={(event) => autoResize(event.currentTarget)}
+            required
+            bg={textareaBg}
+          />
+          <Button type="submit" isDisabled={!inputValue.trim()}>
             送信
-          </button>
-        </form>
-      </main>
-    </div>
+          </Button>
+        </Form>
+      </Flex>
+    </Flex>
   );
 }
