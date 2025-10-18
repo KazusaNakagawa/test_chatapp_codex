@@ -126,15 +126,21 @@ export default function ChatApp() {
   const textareaBg = useColorModeValue("white", "gray.800");
 
   return (
-    <Flex h="100%" minH="100vh" bg={layoutBg}>
+    <Flex
+      h="100%"
+      minH="100vh"
+      bg={layoutBg}
+      direction={{ base: "column", lg: "row" }}
+    >
       <Flex
         as="aside"
         direction="column"
-        w="72"
-        px="6"
-        py="6"
-        gap="6"
-        borderRightWidth="1px"
+        w={{ base: "full", lg: "72" }}
+        px={{ base: 4, lg: 6 }}
+        py={{ base: 4, lg: 6 }}
+        gap={{ base: 4, lg: 6 }}
+        borderRightWidth={{ base: 0, lg: "1px" }}
+        borderBottomWidth={{ base: "1px", lg: 0 }}
         borderColor={borderColor}
         bg={sidebarBg}
       >
@@ -156,10 +162,11 @@ export default function ChatApp() {
         </Button>
         <VStack
           spacing="2"
-          align="stretch"
+          alignItems="stretch"
           flex="1"
           overflowY="auto"
           pr="1"
+          maxH={{ base: "40vh", lg: "unset" }}
           role="list"
         >
           {conversations.map((conversation) => {
@@ -184,11 +191,11 @@ export default function ChatApp() {
         </VStack>
       </Flex>
 
-      <Flex flex="1" direction="column" bg={mainBodyBg}>
+      <Flex flex="1" direction="column" bg={mainBodyBg} w="full">
         <Flex
           as="header"
-          px="8"
-          py="6"
+          px={{ base: 4, lg: 8 }}
+          py={{ base: 4, lg: 6 }}
           align="center"
           justify="space-between"
           borderBottomWidth="1px"
@@ -201,7 +208,7 @@ export default function ChatApp() {
               TypeScript + React + Next.js アーキテクト構成
             </Text>
           </Box>
-          <HStack spacing="3">
+          <HStack spacing={{ base: 2, lg: 3 }}>
             <Button
               variant="ghost"
               size="sm"
@@ -229,7 +236,13 @@ export default function ChatApp() {
         </Flex>
 
         <Collapse in={stackDisclosure.isOpen} animateOpacity>
-          <Box px="8" py="6" borderBottomWidth="1px" borderColor={borderColor} bg={panelBg}>
+          <Box
+            px={{ base: 4, lg: 8 }}
+            py={{ base: 4, lg: 6 }}
+            borderBottomWidth="1px"
+            borderColor={borderColor}
+            bg={panelBg}
+          >
             <Heading size="md" mb="2">
               アーキテクトレイヤー
             </Heading>
@@ -291,8 +304,8 @@ export default function ChatApp() {
         <Box
           flex="1"
           overflowY="auto"
-          px="8"
-          py="6"
+          px={{ base: 4, lg: 8 }}
+          py={{ base: 4, lg: 6 }}
           display="flex"
           flexDirection="column"
           gap="4"
@@ -376,7 +389,7 @@ export default function ChatApp() {
           <Box ref={endOfMessagesRef} />
         </Box>
 
-        <Box px="8" py="4">
+        <Box px={{ base: 4, lg: 8 }} py={{ base: 4, lg: 6 }}>
           <Wrap spacing="3">
             {SUGGESTIONS.map((suggestion) => (
               <WrapItem key={suggestion}>
@@ -395,9 +408,11 @@ export default function ChatApp() {
 
         <Form
           display="flex"
-          gap="4"
-          px="8"
-          py="6"
+          flexDirection={{ base: "column", md: "row" }}
+          alignItems="stretch"
+          gap={{ base: 3, md: 4 }}
+          px={{ base: 4, lg: 8 }}
+          py={{ base: 4, lg: 6 }}
           onSubmit={handleSubmit}
           onKeyDown={handleKeyDown}
         >
@@ -412,8 +427,13 @@ export default function ChatApp() {
             onInput={(event) => autoResize(event.currentTarget)}
             required
             bg={textareaBg}
+            minH="52px"
           />
-          <Button type="submit" isDisabled={!inputValue.trim()}>
+          <Button
+            type="submit"
+            isDisabled={!inputValue.trim()}
+            alignSelf={{ base: "stretch", md: "flex-end" }}
+          >
             送信
           </Button>
         </Form>
