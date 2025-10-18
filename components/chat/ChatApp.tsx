@@ -236,7 +236,13 @@ export default function ChatApp() {
             <Text fontSize="sm" color={secondaryText} mb="6">
               docs/readme.md に記載された構成案を元にスタック情報を整理しています。
             </Text>
-            <Flex direction="column" gap="4">
+            <Flex
+              direction="column"
+              gap="4"
+              maxH={{ base: "60vh", lg: "50vh" }}
+              overflowY="auto"
+              pr="2"
+            >
               {STACK_ROWS.map((row) => (
                 <Box
                   key={row.layer}
