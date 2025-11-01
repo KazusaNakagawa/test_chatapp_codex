@@ -57,38 +57,3 @@ export const SUGGESTIONS = [
   "Next.js で SSR を活かすメリットは？",
   "ChatGPT 風UIを実装する上でのポイントは？",
 ] as const;
-
-export const RESPONSE_PATTERNS: Array<{
-  pattern: RegExp;
-  reply: (message: string) => string;
-}> = [
-  {
-    pattern: /スタック|構成|レイヤー|アーキテクチャ|architect/i,
-    reply: () =>
-      [
-        "このデモは次のレイヤー構成を意識して作られています:",
-        "- 表示言語: HTML + CSS + TypeScript",
-        "- フレームワーク: React と Next.js",
-        "- スタイリング: グローバルCSSをベースに Tailwind などへ拡張しやすい構成",
-        "- 状態管理: React hooks とローカルストレージを併用",
-        "- SSR: Next.js を利用することでハイブリッドレンダリングに対応可能",
-        "",
-        "詳しい説明は docs/readme.md を確認してください。",
-      ].join("\n"),
-  },
-  {
-    pattern: /typescript|ts/i,
-    reply: () =>
-      "TypeScript は JavaScript に型付けを導入することで、補完やリファクタリングの信頼性を高めます。Next.js のようなフレームワークでも公式にサポートされており、コンポーネント間の契約を明確にできます。",
-  },
-  {
-    pattern: /next\.?js|nextjs|ssr|ssg/i,
-    reply: () =>
-      "Next.js は SSR や SSG をシームレスに扱えるため、チャットの初期描画を高速化できます。このデモでも Next.js の App Router を用いた構成を想定しています。",
-  },
-  {
-    pattern: /レビュー|モダン|設計/i,
-    reply: () =>
-      "モダンなチャットUIでは、UI層・状態層・通信層を明確に切り分けることでスケールしやすい設計になります。React コンポーネントを UI に、カスタムフックで状態を扱うのがシンプルで再利用性も高いアプローチです。",
-  },
-];
