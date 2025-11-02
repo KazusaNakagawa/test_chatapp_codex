@@ -56,6 +56,15 @@ const normaliseContent = (rawBody: string): string => {
   }
 };
 
+/**
+ * Send chat messages to the configured backend and return the response's extracted content.
+ *
+ * @param messages - Sequence of chat messages to send; each message's `role` and `content` are included in the request payload
+ * @param options - Optional request settings
+ * @param options.signal - AbortSignal to cancel the request
+ * @returns The response content extracted and normalized from the backend; if extraction fails, the original response body is returned
+ * @throws An Error containing HTTP status and backend detail when the response has a non-OK status
+ */
 export async function requestChatCompletion(
   messages: ChatMessage[],
   options: RequestOptions = {}
@@ -83,6 +92,12 @@ export async function requestChatCompletion(
   return normaliseContent(rawBody);
 }
 
+/**
+ * Extracts a readable error message from an HTTP Response.
+ *
+ * @param response - The Response object to inspect for a JSON `detail` field
+ * @returns A string in the form "`<status> <statusText>: <detail>`" if the body contains a `detail` field; otherwise "`<status> <statusText>`"
+ */
 async function safeReadError(response: Response): Promise<string> {
   try {
     const data = await response.json();
