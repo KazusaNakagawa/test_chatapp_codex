@@ -101,7 +101,7 @@ export const useChat = () => {
 
       const deliverReply = async () => {
         try {
-          const reply = await requestChatCompletion(targetConversation.messages, {
+          const replyContent = await requestChatCompletion(targetConversation.messages, {
             signal: controller.signal,
           });
 
@@ -110,7 +110,7 @@ export const useChat = () => {
             if (!current) {
               return prev;
             }
-            const updated = appendMessage(current, reply.role, reply.content);
+            const updated = appendMessage(current, "assistant", replyContent);
             return sortConversations([
               updated,
               ...prev.filter((item) => item.id !== updated.id),

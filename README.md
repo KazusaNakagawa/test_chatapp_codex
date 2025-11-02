@@ -25,23 +25,9 @@ TypeScript / React / Next.js を用いて ChatGPT 風のチャット画面を再
 npm install
 ```
 
-FastAPI バックエンドの依存関係は Python 側でインストールします。
-
-```bash
-python -m venv .venv
-source .venv/bin/activate  # Windows の場合は .venv\Scripts\activate
-pip install -r fastapi_requirements.txt
-```
-
 ## ローカル開発
 
-1. バックエンドを起動します。
-
-   ```bash
-   uvicorn fastapi_app:app --reload --port 8000
-   ```
-
-2. フロントエンドを起動します。
+フロントエンドを起動します。
 
    ```bash
    NEXT_PUBLIC_CHAT_API_URL=http://localhost:8000 npm run dev
