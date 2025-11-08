@@ -14,42 +14,102 @@ const API_BASE_URL = resolveBaseUrl();
 
 type RequestOptions = { signal?: AbortSignal };
 type ApiMessage = Pick<ChatMessage, "role" | "content">;
+type ContentCarrier = { content?: unknown };
+
+const CONTENT_KEY_PATTERN = /["']content["']\s*:\s*/i;
+const ESCAPE_MAP: Record<string, string> = {
+  n: "\n",
+  r: "\r",
+  t: "\t",
+  b: "\b",
+  f: "\f",
+  v: "\v",
+  0: "\0",
+  "\\": "\\",
+  '"': '"',
+  "'": "'",
+};
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === "object" && value !== null;
+
+const decodeEscapedLiteral = (value: string): string =>
+  value.replace(/\\(u[0-9a-fA-F]{4}|.)/g, (_, sequence: string) => {
+    if (sequence.startsWith("u") && sequence.length === 5) {
+      return String.fromCharCode(Number.parseInt(sequence.slice(1), 16));
+    }
+    return ESCAPE_MAP[sequence] ?? sequence;
+  });
+
+const extractContentFromPseudoJson = (raw: string): string | null => {
+  const match = CONTENT_KEY_PATTERN.exec(raw);
+  if (!match || match.index === undefined) {
+    return null;
+  }
+  let cursor = match.index + match[0].length;
+  const quote = raw[cursor];
+  if (quote !== '"' && quote !== "'") {
+    return null;
+  }
+  cursor += 1;
+  let buffer = "";
+  let escaped = false;
+  for (; cursor < raw.length; cursor += 1) {
+    const char = raw[cursor];
+    if (escaped) {
+      buffer += "\\";
+      buffer += char;
+      escaped = false;
+      continue;   
+    }
+    if (char === "\\") {
+      escaped = true;
+      continue;
+    }
+    if (char === quote) {
+      return decodeEscapedLiteral(buffer);
+    }
+    buffer += char;
+  }
+  return null;
+};
+
+const tryParseInnerContent = (raw: string): string | null => {
+  try {
+    const parsed = JSON.parse(raw);
+    if (isRecord(parsed)) {
+      const { content } = parsed as ContentCarrier;
+      if (typeof content === "string") {
+        return decodeEscapedLiteral(content);
+      }
+    }
+  } catch {
+    // ignore
+  }
+  return extractContentFromPseudoJson(raw);
+};
 
 /**
  * assistant の content を正規化して抽出する
  */
 const normaliseContent = (rawBody: string): string => {
   try {
-    // 外側 JSON をパース
     const outer = JSON.parse(rawBody);
-    let innerRaw = outer.content;
-
-    // シングルクォートをダブルクォートに変換
-    // 改行やタブなどをエスケープ
-    innerRaw = innerRaw
-      .replace(/'/g, '"')
-      .replace(/\r?\n/g, "\\n")
-      .replace(/\t/g, "\\t")
-      .replace(/\f/g, "\\f")
-      .replace(/\v/g, "\\v");
-
-    // "最初の }" 以降の余分な文章を除去
-    //  → 内側JSONの末尾を検出してそこまで切り出す
-    const match = innerRaw.match(/^\s*{.*?}\s*/s);
-    if (match) {
-      innerRaw = match[0]; // JSON 部分だけに限定
+    if (isRecord(outer)) {
+      const { content } = outer as ContentCarrier;
+      if (typeof content !== "string") {
+        return rawBody;
+      }
+      const inner = tryParseInnerContent(content);
+      if (typeof inner === "string") {
+        return inner;
+      }
+      return decodeEscapedLiteral(content);
     }
-
-    // 内側 JSON をパース
-    const inner = JSON.parse(innerRaw);
-
-    // content を返す
-    if (typeof inner.content === "string") {
-      // 文字列内の \n を実際の改行に変換（任意）
-      return inner.content.replace(/\\n/g, "\n");
+    if (typeof outer === "string") {
+      return decodeEscapedLiteral(outer);
     }
-
-    return innerRaw;
+    return rawBody;
   } catch (err) {
     console.error("content抽出失敗:", err);
     return rawBody;
@@ -78,8 +138,6 @@ export async function requestChatCompletion(
   }
 
   const rawBody = await response.text();
-
-  console.log(rawBody)
   return normaliseContent(rawBody);
 }
 
