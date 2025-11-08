@@ -16,6 +16,7 @@ TypeScript / React / Next.js を用いて ChatGPT 風のチャット画面を再
 - `app/` – Next.js App Router のベース構成。`app/providers.tsx` で ChakraProvider を注入し、グローバルテーマを定義
 - `components/chat/ChatApp.tsx` – クライアントコンポーネント。本体UI、テーマ切替、スタックパネル、メッセージ描画を管理
 - `lib/chat/` – 常数 (`constants.ts`)、型 (`types.ts`)、状態管理ロジック (`state.ts`)、カスタムフック (`useChat.ts`) を分離
+- `fastapi_app.py` – FastAPI で実装した会話応答エンドポイント。将来的に OpenAI 連携等へ置き換え可能な構造
 - `docs/readme.md` – 参考としたアーキテクト層の説明、ローカル実行手順
 
 ## セットアップ
@@ -26,10 +27,12 @@ npm install
 
 ## ローカル開発
 
-```bash
-npm run dev
-# → http://localhost:3000 でチャット画面を確認
-```
+フロントエンドを起動します。
+
+   ```bash
+   NEXT_PUBLIC_CHAT_API_URL=http://localhost:8000 npm run dev
+   # → http://localhost:3000 でチャット画面を確認
+   ```
 
 ポートを変更したい場合は `PORT=8080 npm run dev` のように環境変数を指定します。
 
@@ -49,5 +52,7 @@ npm run lint
 ## 補足
 
 - 初回アクセス時にローカルストレージへ会話履歴とテーマ設定を保存します。
+- チャットメッセージは `NEXT_PUBLIC_CHAT_API_URL` で指定した FastAPI バックエンドへ送信されます。未設定の場合は `http://localhost:8000` を利用します。
+- バックエンドから許可するオリジンを追加したい場合は `CHAT_BACKEND_CORS_ORIGINS` 環境変数をカンマ区切りで設定してください。
 - スタック情報パネルは `docs/readme.md` の内容を UI 上で閲覧できるようにしたものです。
 - Chakra テーマは `app/providers.tsx` で `extendTheme` を用いて定義し、ライト／ダーク両モードに合わせて背景／文字色を切り替えています。
