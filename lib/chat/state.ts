@@ -1,6 +1,9 @@
 import { DEFAULT_TITLE, INITIAL_ASSISTANT_MESSAGE } from "./constants";
 import type { ChatMessage, Conversation, Role } from "./types";
 
+export const sortConversations = (items: Conversation[]) =>
+  [...items].sort((a, b) => b.updatedAt - a.updatedAt);
+
 const randomId = () =>
   typeof crypto !== "undefined" && "randomUUID" in crypto
     ? crypto.randomUUID()

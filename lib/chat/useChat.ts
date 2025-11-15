@@ -1,26 +1,28 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { STORAGE_KEY } from "./constants";
 import { requestChatCompletion } from "./api";
-import { appendMessage, createNewConversation, parseConversations } from "./state";
+import { appendMessage, createNewConversation, sortConversations } from "./state";
+import { localConversationStorage, type ConversationStorage } from "./storage";
 import type { Conversation } from "./types";
-
-const sortConversations = (items: Conversation[]) =>
-  [...items].sort((a, b) => b.updatedAt - a.updatedAt);
 
 const CONNECTION_ERROR_MESSAGE =
   "サーバーとの通信に失敗しました。しばらく待ってから再度お試しください。";
 
-const toJSON = (conversations: Conversation[]) =>
-  JSON.stringify(conversations, (key, value) => {
-    if (key === "createdAt" || key === "updatedAt") {
-      return Number(value);
-    }
-    return value;
-  });
+export interface UseChatOptions {
+  api?: typeof requestChatCompletion;
+  storage?: ConversationStorage;
+}
 
-export const useChat = () => {
+export const useChat = (options: UseChatOptions = {}) => {
+  const chatClient = useMemo(
+    () => options.api ?? requestChatCompletion,
+    [options.api]
+  );
+  const storage = useMemo(
+    () => options.storage ?? localConversationStorage,
+    [options.storage]
+  );
   const [conversations, setConversations] = useState<Conversation[]>(() => [
     createNewConversation(),
   ]);
@@ -30,8 +32,7 @@ export const useChat = () => {
   const pendingReply = useRef<AbortController | null>(null);
 
   useEffect(() => {
-    const raw = typeof window !== "undefined" ? window.localStorage.getItem(STORAGE_KEY) : null;
-    const restored = sortConversations(parseConversations(raw));
+    const restored = storage.load();
     if (restored.length > 0) {
       setConversations(restored);
       setActiveId(restored[0].id);
@@ -45,14 +46,14 @@ export const useChat = () => {
       pendingReply.current?.abort();
       pendingReply.current = null;
     };
-  }, []);
+  }, [storage]);
 
   useEffect(() => {
-    if (!hydrated || typeof window === "undefined") {
+    if (!hydrated) {
       return;
     }
-    window.localStorage.setItem(STORAGE_KEY, toJSON(conversations));
-  }, [conversations, hydrated]);
+    storage.save(conversations);
+  }, [conversations, hydrated, storage]);
 
   const activeConversation = useMemo(() => {
     const current = conversations.find((item) => item.id === activeId);
@@ -101,7 +102,7 @@ export const useChat = () => {
 
       const deliverReply = async () => {
         try {
-          const replyContent = await requestChatCompletion(targetConversation.messages, {
+          const replyContent = await chatClient(targetConversation.messages, {
             signal: controller.signal,
           });
 
@@ -143,7 +144,7 @@ export const useChat = () => {
 
       void deliverReply();
     },
-    [activeConversation, pushConversation]
+    [activeConversation, pushConversation, chatClient]
   );
 
   const removeTypingState = useCallback(() => {
