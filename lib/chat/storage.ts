@@ -22,15 +22,23 @@ export const localConversationStorage: ConversationStorage = {
     if (!isBrowser()) {
       return [];
     }
-    const raw = window.localStorage.getItem(STORAGE_KEY);
-    const restored = parseConversations(raw);
-    return restored.length > 0 ? sortConversations(restored) : [];
+    try {
+      const raw = window.localStorage.getItem(STORAGE_KEY);
+      const restored = parseConversations(raw);
+      return restored.length > 0 ? sortConversations(restored) : [];
+    } catch {
+      return [];
+    }
   },
   save: (conversations) => {
     if (!isBrowser()) {
       return;
     }
-    window.localStorage.setItem(STORAGE_KEY, toJSON(conversations));
+    try {
+      window.localStorage.setItem(STORAGE_KEY, toJSON(conversations));
+    } catch {
+      // Ignore persistence errors to avoid breaking the UI
+    }
   },
 };
 
